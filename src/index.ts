@@ -8,9 +8,11 @@ import authRouter from "./routes/auth";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:3000",
+  credentials: true,
+}));
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => {
@@ -20,11 +22,24 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/items", itemsRouter);
 app.use("/api/auth", authRouter);
 
-async function start() {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+let dbConnected = false;
+
+async function ensureDB() {
+  if (!dbConnected) {
+    await connectDB();
+    dbConnected = true;
+  }
+}
+
+// Local dev: listen directly
+if (process.env.VERCEL !== "1") {
+  ensureDB().then(() => {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
   });
 }
 
-start();
+export { ensureDB };
+export default app;

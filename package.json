@@ -2,11 +2,11 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "SCIC-3 Backend API",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +18,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.4",
+    "serverless-http": "^4.0.0",
     "stripe": "^22.3.1"
   },
   "devDependencies": {
