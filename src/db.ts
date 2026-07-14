@@ -1,8 +1,12 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/scic3";
-
 export async function connectDB(): Promise<void> {
+  const MONGODB_URI = process.env.MONGODB_URI;
+  if (!MONGODB_URI) {
+    console.error("MONGODB_URI not set. Run from backend/ so dotenv finds backend/.env.");
+    process.exit(1);
+  }
+
   try {
     await mongoose.connect(MONGODB_URI);
     console.log("MongoDB connected:", MONGODB_URI);
