@@ -4,24 +4,29 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-in-production";
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET must be set");
+const JWT_SECRET = process.env.JWT_SECRET;
+const ALLOWED_ORIGINS = (process.env.CLIENT_URL || "http://localhost:3000")
+  .split(",").map(s => s.trim());
 
 const app = express();
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) cb(null, true);
+    else cb(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
-let dbConnected = false;
-
 async function connectDB() {
-  if (dbConnected) return;
+  if (mongoose.connection.readyState === 1) return;
   const MONGODB_URI = process.env.MONGODB_URI;
   if (!MONGODB_URI) {
     console.warn("MONGODB_URI not set");
     return;
   }
   await mongoose.connect(MONGODB_URI);
-  dbConnected = true;
 }
 
 const ItemSchema = new mongoose.Schema(
@@ -185,12 +190,9 @@ app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
 });
 
-let cachedHandler;
-
 module.exports = async function handler(req, res) {
-  if (!cachedHandler) {
+  if (mongoose.connection.readyState !== 1) {
     await connectDB();
-    cachedHandler = app;
   }
-  return cachedHandler(req, res);
+  return app(req, res);
 };
